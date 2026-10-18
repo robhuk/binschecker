@@ -1,4 +1,4 @@
-const CACHE='bin-day-pwa-v1';
+const CACHE='bin-day-pwa-v2';
 const FILES=['./','./index.html','./manifest.webmanifest','./icons/bin-icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES))));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));

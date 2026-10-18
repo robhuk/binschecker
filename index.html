@@ -82,9 +82,23 @@ button{font:inherit;border:0;cursor:pointer;border-radius:13px;font-weight:800;m
 <label class="type-option"><input type="checkbox" name="type" value="general"><span class="type-dot" style="background:#198754"></span><span class="type-name">General waste <span class="type-desc">· Green bin</span></span></label>
 <label class="type-option"><input type="checkbox" name="type" value="recycling"><span class="type-dot" style="background:#1877d2"></span><span class="type-name">Recycling <span class="type-desc">· Blue bin</span></span></label>
 <label class="type-option"><input type="checkbox" name="type" value="garden"><span class="type-dot" style="background:#222b28"></span><span class="type-name">Garden waste <span class="type-desc">· Other bin</span></span></label>
+<label class="type-option"><input type="checkbox" name="type" value="skip"><span class="type-dot" style="background:#f5c84c"></span><span class="type-name">Skip collection <span class="type-desc">· Yellow skip icon</span></span></label>
 </div>
+<label for="binColour">Bin colour</label>
+<select id="binColour" required>
+<option value="auto">Use default colour for bin type</option>
+<option value="#198754">Green</option>
+<option value="#1877d2">Blue</option>
+<option value="#242b28">Black</option>
+<option value="#7b8794">Grey</option>
+<option value="#f5c84c">Yellow</option>
+<option value="#8b5e3c">Brown</option>
+<option value="#8b5cf6">Purple</option>
+<option value="#e85d75">Red / Pink</option>
+<option value="#ffffff">White</option>
+</select>
 <label for="frequency">Frequency</label>
-<select id="frequency" required><option value="1">Weekly</option><option value="2">Every two weeks</option></select>
+<select id="frequency" required><option value="1">Weekly</option><option value="2">Every two weeks</option><option value="0">One-off collection</option></select>
 <label for="nextCollection">Next collection date</label>
 <input id="nextCollection" type="date" required>
 <button class="primary" type="submit" id="saveBtn">Save bin day</button>
@@ -109,9 +123,11 @@ const DAY_NAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Sa
 const TYPE_INFO={
  general:{label:'General waste',bin:'Green',color:'#198754'},
  recycling:{label:'Recycling',bin:'Blue',color:'#1877d2'},
- garden:{label:'Garden waste',bin:'Black',color:'#242b28'}
+ garden:{label:'Garden waste',bin:'Black',color:'#242b28'},
+ skip:{label:'Skip collection',bin:'Yellow',color:'#f5c84c'}
 };
 const $=id=>document.getElementById(id);
+function binColour(bin){return bin.colour&&bin.colour!=='auto'?bin.colour:(TYPE_INFO[bin.type]?.color||'#242b28');}
 let bins=[];
 try{bins=JSON.parse(localStorage.getItem('bin-day-items')||'[]')}catch(e){bins=[]}
 const todayISO=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
@@ -120,13 +136,16 @@ const isoDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-$
 const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
 const formatDate=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 const dayLabel=d=>DAY_NAMES[d.getDay()];
-function binSvg(type,small=false){
- const c=TYPE_INFO[type]?.color||'#242b28';let w=small?44:100,h=small?50:108;
- return `<svg class="${small?'mini-bin':'bin-art'}" viewBox="0 0 100 110" aria-hidden="true"><ellipse cx="51" cy="101" rx="34" ry="5" fill="#17312a" opacity=".1"/><path d="M22 24h57l-5 68H27z" fill="${c}"/><path d="M17 17h67v10H17z" fill="${c}" stroke="#000" stroke-opacity=".12"/><path d="M35 11h32v6H35z" fill="${c}"/><circle cx="35" cy="96" r="6" fill="#263b32"/><circle cx="67" cy="96" r="6" fill="#263b32"/><path d="M36 35v49M50 35v49M64 35v49" stroke="#fff" stroke-opacity=".2" stroke-width="3"/></svg>`;
+function binSvg(type,small=false,customColour=null){
+ const c=customColour||TYPE_INFO[type]?.color||'#242b28';
+ if(type==='skip') return `<svg class="${small?'mini-bin':'bin-art'}" viewBox="0 0 100 110" aria-hidden="true"><ellipse cx="51" cy="101" rx="35" ry="5" fill="#17312a" opacity=".1"/><path d="M13 48h74l-8 42H21z" fill="${c}" stroke="#b58b13" stroke-width="2"/><path d="M9 45h82v8H9z" fill="#e3b42e"/><path d="M24 48l7-17h38l7 17" fill="${c}" stroke="#b58b13" stroke-width="2"/><path d="M32 65l10 10 24-22" fill="none" stroke="#242b28" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="29" cy="95" r="5" fill="#263b32"/><circle cx="71" cy="95" r="5" fill="#263b32"/></svg>`;
+ const symbol=type==='recycling'?'<g fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M39 42l7-12 8 2"/><path d="M53 32l-1 8 8-3"/><path d="M63 48l7 12-5 7"/><path d="M69 67l-8-1 4-7"/><path d="M48 68H34l-4-7"/><path d="M29 60l2 8 6-5"/></g>':'';
+ return `<svg class="${small?'mini-bin':'bin-art'}" viewBox="0 0 100 110" aria-hidden="true"><ellipse cx="51" cy="101" rx="34" ry="5" fill="#17312a" opacity=".1"/><path d="M22 24h57l-5 68H27z" fill="${c}"/><path d="M17 17h67v10H17z" fill="${c}" stroke="#000" stroke-opacity=".12"/><path d="M35 11h32v6H35z" fill="${c}"/><circle cx="35" cy="96" r="6" fill="#263b32"/><circle cx="67" cy="96" r="6" fill="#263b32"/><path d="M36 35v49M50 35v49M64 35v49" stroke="#fff" stroke-opacity=".2" stroke-width="3"/>${symbol}</svg>`;
 }
 function nextFor(bin,from=new Date()){
  let next=parseDate(bin.nextDate);const step=Number(bin.frequency)*7;
  const base=parseDate(bin.nextDate);
+ if(Number(bin.frequency)===0) return base;
  if(base<new Date(from.getFullYear(),from.getMonth(),from.getDate(),0,0,0)){
    const diff=Math.ceil((new Date(from.getFullYear(),from.getMonth(),from.getDate())-base)/86400000);
    next=addDays(base,Math.ceil(diff/step)*step);
@@ -140,9 +159,13 @@ function upcomingOccurrences(limit=4){
  bins.forEach(b=>{
   const step=Number(b.frequency)*7;
   let date=nextFor(b,today);
-  for(let i=0;i<Math.ceil(150/step)+2;i++){
+  if(Number(b.frequency)===0){
    if(date>=today)occurrences.push({bin:b,date:new Date(date),type:b.type});
-   date=addDays(date,step);
+  }else{
+   for(let i=0;i<Math.ceil(150/step)+2;i++){
+    if(date>=today)occurrences.push({bin:b,date:new Date(date),type:b.type});
+    date=addDays(date,step);
+   }
   }
  });
  return occurrences.sort((a,b)=>a.date-b.date||TYPE_INFO[a.type].label.localeCompare(TYPE_INFO[b.type].label)).slice(0,limit);
@@ -152,23 +175,23 @@ function renderUpcoming(){
  const upcoming=upcomingOccurrences(4);
  if(!upcoming.length){strip.innerHTML='';strip.classList.add('hidden');return;}
  strip.classList.remove('hidden');
- strip.innerHTML=upcoming.map(o=>`<div class="upcoming-item"><span class="upcoming-dot" style="background:${TYPE_INFO[o.type].color}"></span><strong>${o.date.toLocaleDateString('en-GB',{weekday:'short'})}</strong><span>${formatDate(o.date)}</span><span>· ${TYPE_INFO[o.type].label}</span></div>`).join('');
+ strip.innerHTML=upcoming.map(o=>`<div class="upcoming-item"><span class="upcoming-dot" style="background:${binColour(o.bin)}"></span><strong>${o.date.toLocaleDateString('en-GB',{weekday:'short'})}</strong><span>${formatDate(o.date)}</span><span>· ${TYPE_INFO[o.type].label}</span></div>`).join('');
 }
 function render(){
- const all=bins.map(b=>({...b,next:nextFor(b)})).sort((a,b)=>a.next-b.next||TYPE_INFO[a.type].label.localeCompare(TYPE_INFO[b.type].label));
+ const all=bins.map(b=>({...b,next:nextFor(b)})).filter(b=>Number(b.frequency)!==0||b.next>=parseDate(todayISO())).sort((a,b)=>a.next-b.next||TYPE_INFO[a.type].label.localeCompare(TYPE_INFO[b.type].label));
  if(!all.length){$('nextArt').innerHTML=binSvg('general');$('nextTitle').textContent='Add your first bin day';$('nextDate').textContent='Choose a collection date to get started.';$('nextSub').textContent='Your next collection will appear here.';}
  else{
   const n=all[0],sameDay=all.filter(b=>isoDate(b.next)===isoDate(n.next));
   const info=TYPE_INFO[n.type];
-  $('nextArt').innerHTML=binSvg(n.type);
+  $('nextArt').innerHTML=binSvg(n.type,false,binColour(n));
   const names=[...new Set(sameDay.map(b=>TYPE_INFO[b.type].label))];
   $('nextTitle').textContent=sameDay.length>1?`Your next collection is ${names.join(' + ')}`:`Your next collection is ${info.bin.toLowerCase()} bin`;
   $('nextDate').textContent=`on ${dayLabel(n.next)} ${formatDate(n.next)}`;
-  $('nextSub').textContent=sameDay.length>1?sameDay.map(b=>`${TYPE_INFO[b.type].label} (${TYPE_INFO[b.type].bin})`).join(' · '):`${info.label} · ${n.frequency==1?'Weekly':'Every two weeks'}`;
+  $('nextSub').textContent=sameDay.length>1?sameDay.map(b=>`${TYPE_INFO[b.type].label} (${TYPE_INFO[b.type].bin})`).join(' · '):`${info.label} · ${n.frequency==0?'One-off collection':n.frequency==1?'Weekly':'Every two weeks'}`;
  }
  const list=$('savedBinsPanel');
  if(!all.length){list.innerHTML='<p class="empty">No bin days saved yet. Add one above to build your schedule.</p>';}
- else list.innerHTML=all.map(b=>`<div class="bin-row">${binSvg(b.type,true)}<div class="meta"><strong>${TYPE_INFO[b.type].label}</strong><small>${dayLabel(b.next)} ${formatDate(b.next)} · ${b.frequency==1?'Weekly':'Every two weeks'}</small></div><div class="row-actions"><button class="secondary" data-edit="${b.id}" aria-label="Edit ${TYPE_INFO[b.type].label}">Edit</button><button class="danger" data-delete="${b.id}" aria-label="Delete ${TYPE_INFO[b.type].label}">Delete</button></div></div>`).join('');
+ else list.innerHTML=all.map(b=>`<div class="bin-row">${binSvg(b.type,true,binColour(b))}<div class="meta"><strong>${TYPE_INFO[b.type].label}</strong><small>${dayLabel(b.next)} ${formatDate(b.next)} · ${b.frequency==0?'One-off collection':b.frequency==1?'Weekly':'Every two weeks'}</small></div><div class="row-actions"><button class="secondary" data-edit="${b.id}" aria-label="Edit ${TYPE_INFO[b.type].label}">Edit</button><button class="danger" data-delete="${b.id}" aria-label="Delete ${TYPE_INFO[b.type].label}">Delete</button></div></div>`).join('');
  list.querySelectorAll('[data-edit]').forEach(btn=>btn.addEventListener('click',()=>editBin(btn.dataset.edit)));
  list.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',()=>{bins=bins.filter(b=>b.id!==btn.dataset.delete);save();}));
  renderUpcoming();
@@ -182,11 +205,11 @@ function setEditorOpen(open, scroll=true){
  if(open && scroll) setTimeout(()=>$('editor').scrollIntoView({behavior:'smooth',block:'start'}),50);
 }
 function resetForm(){
- $('binForm').reset();$('editId').value='';$('nextCollection').value=todayISO();$('formTitle').textContent='Add a bin';$('editorEyebrow').textContent='Set up a collection';$('saveBtn').textContent='Save bin day';$('cancelEdit').classList.add('hidden');
+ $('binForm').reset();$('editId').value='';$('binColour').value='auto';$('nextCollection').value=todayISO();$('formTitle').textContent='Add a bin';$('editorEyebrow').textContent='Set up a collection';$('saveBtn').textContent='Save bin day';$('cancelEdit').classList.add('hidden');
 }
 function editBin(id){
  const b=bins.find(x=>x.id===id);if(!b)return;
- $('editId').value=b.id;$('frequency').value=String(b.frequency);$('nextCollection').value=b.nextDate;
+ $('editId').value=b.id;$('frequency').value=String(b.frequency);$('binColour').value=b.colour||'auto';$('nextCollection').value=b.nextDate;
  document.querySelectorAll('input[name="day"]').forEach(x=>x.checked=x.value===String(b.day));
  document.querySelectorAll('input[name="type"]').forEach(x=>x.checked=x.value===b.type);
  $('formTitle').textContent='Edit bin day';$('editorEyebrow').textContent='Update collection';$('saveBtn').textContent='Save changes';$('cancelEdit').classList.remove('hidden');
@@ -202,7 +225,7 @@ $('binForm').addEventListener('submit',e=>{
  if(!nextDate){alert('Please choose the next collection date.');return}
  const date=parseDate(nextDate);
  if(date.getDay()!==Number(selectedDay.value)){alert(`The selected date is a ${dayLabel(date)}. Please choose a ${DAY_NAMES[Number(selectedDay.value)]} date or change the collection day.`);return}
- const item={id:$('editId').value||crypto.randomUUID(),day:Number(selectedDay.value),type:types[0],frequency:Number($('frequency').value),nextDate};
+ const item={id:$('editId').value||crypto.randomUUID(),day:Number(selectedDay.value),type:types[0],colour:$('binColour').value,frequency:Number($('frequency').value),nextDate};
  const idx=bins.findIndex(b=>b.id===item.id);if(idx>=0)bins[idx]=item;else bins.push(item);
  save();resetForm();setEditorOpen(false,false);
 });
