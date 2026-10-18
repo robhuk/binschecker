@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f4f7f5">
+<meta name="description" content="Keep track of your household bin collection days.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/bin-icon.svg" type="image/svg+xml">
+<title>Bin Day</title>
+<style>
+:root{--green:#198754;--blue:#1877d2;--ink:#17312a;--muted:#65756e;--paper:#fff;--bg:#f1f5f2;--line:#dfe8e2;--gold:#f5c84c}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{padding:20px 18px 16px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:13px}
+.logo{width:54px;height:54px;flex:none}h1{font-size:1.55rem;margin:0;letter-spacing:-.04em}header p{margin:3px 0 0;color:var(--muted);font-size:.9rem}
+main{max-width:720px;margin:0 auto;padding:18px 16px 105px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:15px;box-shadow:0 4px 18px #193b2b08}
+.eyebrow{text-transform:uppercase;letter-spacing:.1em;font-weight:800;font-size:.72rem;color:var(--muted);margin:0 0 10px}
+.next{display:flex;align-items:center;gap:17px;min-height:142px}.bin-art{width:94px;height:105px;flex:none}.next h2{font-size:1.35rem;line-height:1.25;margin:0 0 8px}.next .date{font-size:1.03rem;font-weight:750}.next .sub{color:var(--muted);font-size:.9rem;margin-top:7px}
+.section-title{font-size:1.1rem;margin:0 0 14px}
+label{font-size:.9rem;font-weight:700;display:block;margin:13px 0 7px}
+input,select{font:inherit;width:100%;border:1px solid #cbd8cf;border-radius:12px;padding:12px 13px;background:#fff;color:var(--ink);min-height:47px}
+input:focus,select:focus,button:focus-visible{outline:3px solid #f5c84c;outline-offset:2px}
+.days{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.day-option input{position:absolute;opacity:0;pointer-events:none}.day-option span{display:flex;align-items:center;justify-content:center;border:1px solid #cbd8cf;border-radius:10px;min-height:44px;font-weight:750;background:#fff}
+.day-option input:checked+span{background:var(--ink);border-color:var(--ink);color:white}
+.types{display:grid;gap:9px}
+.type-option{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:12px;padding:12px;margin:0;cursor:pointer}
+.type-option input{width:19px;min-height:19px;height:19px;accent-color:var(--green);margin:0}
+.type-dot{width:13px;height:13px;border-radius:50%;display:inline-block;flex:none}
+.type-name{flex:1}.type-desc{font-size:.8rem;color:var(--muted);font-weight:500}
+button{font:inherit;border:0;cursor:pointer;border-radius:13px;font-weight:800;min-height:47px;padding:12px 16px}
+.primary{background:var(--green);color:#fff;width:100%;margin-top:16px}.secondary{background:#eaf1ec;color:var(--ink)}.danger{background:#fff0f0;color:#a42b2b;min-height:38px;padding:8px 12px;font-size:.85rem}
+.bin-list{display:grid;gap:10px}.bin-row{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:14px;padding:12px}.mini-bin{width:42px;height:48px;flex:none}.bin-row .meta{flex:1;min-width:0}.bin-row strong{display:block}.bin-row small{display:block;color:var(--muted);margin-top:3px}
+.empty{color:var(--muted);font-size:.92rem;line-height:1.5}
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:#ffffffed;backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;justify-content:center}
+.add-button{width:100%;max-width:680px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;gap:10px}
+.add-button b{font-size:1.5rem;line-height:1}
+.notice{background:#fff8df;border:1px solid #f0df9c;border-radius:12px;padding:12px;font-size:.82rem;line-height:1.45;color:#66551a;margin-top:12px}
+.status{font-size:.82rem;color:var(--muted);margin-top:9px}
+.row-actions{display:flex;gap:8px;align-items:center}
+.hidden{display:none!important}
+@media(min-width:600px){main{padding-top:24px}.next h2{font-size:1.55rem}}
+</style>
+</head>
+<body>
+<header>
+<svg class="logo" viewBox="0 0 100 100" role="img" aria-label="Green and blue wheelie bins">
+<g transform="translate(4 8)"><path d="M8 22h31l-3 57H11z" fill="#198754"/><path d="M4 17h39v8H4z" fill="#116b41"/><path d="M13 12h21v5H13z" fill="#198754"/><circle cx="16" cy="82" r="5" fill="#263b32"/><circle cx="33" cy="82" r="5" fill="#263b32"/><path d="M16 31v42M25 31v42M34 31v42" stroke="#ffffff" stroke-opacity=".22" stroke-width="2"/></g>
+<g transform="translate(48 16)"><path d="M8 22h31l-3 57H11z" fill="#1877d2"/><path d="M4 17h39v8H4z" fill="#105ba8"/><path d="M13 12h21v5H13z" fill="#1877d2"/><circle cx="16" cy="82" r="5" fill="#263b32"/><circle cx="33" cy="82" r="5" fill="#263b32"/><path d="M16 31v42M25 31v42M34 31v42" stroke="#ffffff" stroke-opacity=".22" stroke-width="2"/></g>
+</svg>
+<div><h1>Bin Day</h1><p>Your collection days, sorted.</p></div>
+</header>
+<main>
+<section class="card next" id="nextCard">
+<div id="nextArt"></div>
+<div><p class="eyebrow">Up next</p><h2 id="nextTitle">Add your first bin day</h2><div class="date" id="nextDate">Choose a collection date to get started.</div><div class="sub" id="nextSub"></div></div>
+</section>
+<section class="card" id="editor">
+<p class="eyebrow" id="editorEyebrow">Set up a collection</p>
+<h2 class="section-title" id="formTitle">Add a bin</h2>
+<form id="binForm">
+<input type="hidden" id="editId">
+<label>Collection day</label>
+<div class="days" id="days">
+<label class="day-option"><input type="radio" name="day" value="1" required><span>Mon</span></label>
+<label class="day-option"><input type="radio" name="day" value="2"><span>Tue</span></label>
+<label class="day-option"><input type="radio" name="day" value="3"><span>Wed</span></label>
+<label class="day-option"><input type="radio" name="day" value="4"><span>Thu</span></label>
+<label class="day-option"><input type="radio" name="day" value="5"><span>Fri</span></label>
+</div>
+<label>Bin type</label>
+<div class="types">
+<label class="type-option"><input type="checkbox" name="type" value="general"><span class="type-dot" style="background:#198754"></span><span class="type-name">General waste <span class="type-desc">· Green bin</span></span></label>
+<label class="type-option"><input type="checkbox" name="type" value="recycling"><span class="type-dot" style="background:#1877d2"></span><span class="type-name">Recycling <span class="type-desc">· Blue bin</span></span></label>
+<label class="type-option"><input type="checkbox" name="type" value="garden"><span class="type-dot" style="background:#222b28"></span><span class="type-name">Garden waste <span class="type-desc">· Other bin</span></span></label>
+</div>
+<label for="frequency">Frequency</label>
+<select id="frequency" required><option value="1">Weekly</option><option value="2">Every two weeks</option></select>
+<label for="nextCollection">Next collection date</label>
+<input id="nextCollection" type="date" required>
+<button class="primary" type="submit" id="saveBtn">Save bin day</button>
+<button class="secondary hidden" type="button" id="cancelEdit" style="width:100%;margin-top:8px">Cancel editing</button>
+<div class="notice">Reminders are set for <strong>8:00 pm the evening before</strong> collection. Allow notifications when prompted. Browser-based reminders may not fire if the app is fully closed or your device restricts background activity; see reminder status below.</div>
+<p class="status" id="notificationStatus">Notifications have not been enabled.</p>
+</form>
+</section>
+<section class="card">
+<p class="eyebrow">Your schedule</p><h2 class="section-title">Saved bin days</h2>
+<div class="bin-list" id="binList"><p class="empty">No bin days saved yet. Add one above to build your schedule.</p></div>
+</section>
+</main>
+<div class="bottom-bar"><button class="add-button" id="addBin"><b>＋</b> Add another bin</button></div>
+<script>
+const DAY_NAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const TYPE_INFO={
+ general:{label:'General waste',bin:'Green',color:'#198754'},
+ recycling:{label:'Recycling',bin:'Blue',color:'#1877d2'},
+ garden:{label:'Garden waste',bin:'Black',color:'#242b28'}
+};
+const $=id=>document.getElementById(id);
+let bins=[];
+try{bins=JSON.parse(localStorage.getItem('bin-day-items')||'[]')}catch(e){bins=[]}
+const todayISO=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const parseDate=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d,12,0,0,0)};
+const isoDate=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const formatDate=d=>`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+const dayLabel=d=>DAY_NAMES[d.getDay()];
+function binSvg(type,small=false){
+ const c=TYPE_INFO[type]?.color||'#242b28';let w=small?44:100,h=small?50:108;
+ return `<svg class="${small?'mini-bin':'bin-art'}" viewBox="0 0 100 110" aria-hidden="true"><ellipse cx="51" cy="101" rx="34" ry="5" fill="#17312a" opacity=".1"/><path d="M22 24h57l-5 68H27z" fill="${c}"/><path d="M17 17h67v10H17z" fill="${c}" stroke="#000" stroke-opacity=".12"/><path d="M35 11h32v6H35z" fill="${c}"/><circle cx="35" cy="96" r="6" fill="#263b32"/><circle cx="67" cy="96" r="6" fill="#263b32"/><path d="M36 35v49M50 35v49M64 35v49" stroke="#fff" stroke-opacity=".2" stroke-width="3"/></svg>`;
+}
+function nextFor(bin,from=new Date()){
+ let next=parseDate(bin.nextDate);const step=Number(bin.frequency)*7;
+ const base=parseDate(bin.nextDate);
+ if(base<new Date(from.getFullYear(),from.getMonth(),from.getDate(),0,0,0)){
+   const diff=Math.ceil((new Date(from.getFullYear(),from.getMonth(),from.getDate())-base)/86400000);
+   next=addDays(base,Math.ceil(diff/step)*step);
+ }
+ return next;
+}
+function save(){localStorage.setItem('bin-day-items',JSON.stringify(bins));render();}
+function render(){
+ const all=bins.map(b=>({...b,next:nextFor(b)})).sort((a,b)=>a.next-b.next);
+ if(!all.length){$('nextArt').innerHTML=binSvg('general');$('nextTitle').textContent='Add your first bin day';$('nextDate').textContent='Choose a collection date to get started.';$('nextSub').textContent='Your next collection will appear here.';}
+ else{
+  const n=all[0],info=TYPE_INFO[n.type];
+  $('nextArt').innerHTML=binSvg(n.type);
+  $('nextTitle').textContent=`Your next collection is ${info.bin.toLowerCase()} bin`;
+  $('nextDate').textContent=`on ${dayLabel(n.next)} ${formatDate(n.next)}`;
+  $('nextSub').textContent=`${info.label} · ${n.frequency==1?'Weekly':'Every two weeks'}`;
+ }
+ const list=$('binList');
+ if(!all.length){list.innerHTML='<p class="empty">No bin days saved yet. Add one above to build your schedule.</p>';}
+ else list.innerHTML=all.map(b=>`<div class="bin-row">${binSvg(b.type,true)}<div class="meta"><strong>${TYPE_INFO[b.type].label}</strong><small>${dayLabel(b.next)} ${formatDate(b.next)} · ${b.frequency==1?'Weekly':'Every two weeks'}</small></div><div class="row-actions"><button class="secondary" data-edit="${b.id}" aria-label="Edit ${TYPE_INFO[b.type].label}">Edit</button><button class="danger" data-delete="${b.id}" aria-label="Delete ${TYPE_INFO[b.type].label}">Delete</button></div></div>`).join('');
+ list.querySelectorAll('[data-edit]').forEach(btn=>btn.addEventListener('click',()=>editBin(btn.dataset.edit)));
+ list.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',()=>{bins=bins.filter(b=>b.id!==btn.dataset.delete);save();}));
+ scheduleReminders();
+}
+function resetForm(){
+ $('binForm').reset();$('editId').value='';$('nextCollection').value=todayISO();$('formTitle').textContent='Add a bin';$('editorEyebrow').textContent='Set up a collection';$('saveBtn').textContent='Save bin day';$('cancelEdit').classList.add('hidden');
+}
+function editBin(id){
+ const b=bins.find(x=>x.id===id);if(!b)return;
+ $('editId').value=b.id;$('frequency').value=String(b.frequency);$('nextCollection').value=b.nextDate;
+ document.querySelectorAll('input[name="day"]').forEach(x=>x.checked=x.value===String(b.day));
+ document.querySelectorAll('input[name="type"]').forEach(x=>x.checked=x.value===b.type);
+ $('formTitle').textContent='Edit bin day';$('editorEyebrow').textContent='Update collection';$('saveBtn').textContent='Save changes';$('cancelEdit').classList.remove('hidden');
+ $('editor').scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('binForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ const selectedDay=document.querySelector('input[name="day"]:checked');
+ const types=[...document.querySelectorAll('input[name="type"]:checked')].map(x=>x.value);
+ if(!selectedDay){alert('Please choose a collection day.');return}
+ if(types.length!==1){alert('Please select one bin type. Add separate entries if more than one bin is collected on the same day.');return}
+ const nextDate=$('nextCollection').value;
+ if(!nextDate){alert('Please choose the next collection date.');return}
+ const date=parseDate(nextDate);
+ if(date.getDay()!==Number(selectedDay.value)){alert(`The selected date is a ${dayLabel(date)}. Please choose a ${DAY_NAMES[Number(selectedDay.value)]} date or change the collection day.`);return}
+ const item={id:$('editId').value||crypto.randomUUID(),day:Number(selectedDay.value),type:types[0],frequency:Number($('frequency').value),nextDate};
+ const idx=bins.findIndex(b=>b.id===item.id);if(idx>=0)bins[idx]=item;else bins.push(item);
+ save();resetForm();
+});
+$('cancelEdit').addEventListener('click',resetForm);
+$('addBin').addEventListener('click',()=>{resetForm();$('editor').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>$('days').querySelector('input').focus({preventScroll:true}),300)});
+async function enableNotifications(){
+ if(!('Notification' in window)){ $('notificationStatus').textContent='Notifications are not supported in this browser.';return}
+ try{
+  const permission=await Notification.requestPermission();
+  if(permission==='granted'){$('notificationStatus').textContent='Notifications enabled. Reminder checks run when the app is open; background delivery is not guaranteed.';checkReminders();}
+  else $('notificationStatus').textContent='Notifications are blocked. Enable them in your browser/device settings to receive reminders.';
+ }catch(e){$('notificationStatus').textContent='Could not enable notifications in this browser.'}
+}
+function sentKey(b,date){return `bin-day-reminded-${b.id}-${isoDate(date)}`}
+function checkReminders(){
+ if(!('Notification'in window)||Notification.permission!=='granted')return;
+ const now=new Date();
+ bins.forEach(b=>{
+  const next=nextFor(b,now);
+  const reminder=new Date(next.getFullYear(),next.getMonth(),next.getDate()-1,20,0,0);
+  const delta=now-reminder;
+  if(delta>=0&&delta<86400000&&!localStorage.getItem(sentKey(b,next))){
+   const info=TYPE_INFO[b.type];
+   new Notification('Bin Day reminder',{body:`Put your ${info.label.toLowerCase()} bin out tonight for collection tomorrow (${formatDate(next)}).`,icon:'icons/bin-icon.svg',tag:`bin-${b.id}-${isoDate(next)}`});
+   localStorage.setItem(sentKey(b,next),'1');
+  }
+ });
+}
+function scheduleReminders(){
+ if('Notification'in window && Notification.permission==='granted')checkReminders();
+}
+$('notificationStatus').addEventListener('click',enableNotifications);
+$('notificationStatus').style.cursor='pointer';
+$('notificationStatus').title='Tap to enable or check notification permission';
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+if('Notification'in window&&Notification.permission==='granted')$('notificationStatus').textContent='Notifications enabled. Reminder checks run when the app is open; background delivery is not guaranteed.';
+$('nextCollection').value=todayISO();
+render();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkReminders()});
+setInterval(checkReminders,60000);
+</script>
+</body>
+</html>
