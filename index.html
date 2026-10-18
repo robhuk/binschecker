@@ -17,7 +17,10 @@ main{max-width:720px;margin:0 auto;padding:18px 16px 105px}
 .card{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:15px;box-shadow:0 4px 18px #193b2b08}
 .eyebrow{text-transform:uppercase;letter-spacing:.1em;font-weight:800;font-size:.72rem;color:var(--muted);margin:0 0 10px}
 .next{display:flex;align-items:center;gap:17px;min-height:142px}.bin-art{width:94px;height:105px;flex:none}.next h2{font-size:1.35rem;line-height:1.25;margin:0 0 8px}.next .date{font-size:1.03rem;font-weight:750}.next .sub{color:var(--muted);font-size:.9rem;margin-top:7px}
-.section-title{font-size:1.1rem;margin:0 0 14px}
+.section-title{font-size:1.1rem;margin:5px 0 0;display:block}
+.saved-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;text-align:left;background:transparent;color:var(--ink);padding:0;min-height:48px}
+.saved-toggle .eyebrow{display:block;margin:0 0 4px}
+.toggle-symbol{width:34px;height:34px;border-radius:50%;background:#eaf1ec;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex:none}
 label{font-size:.9rem;font-weight:700;display:block;margin:13px 0 7px}
 input,select{font:inherit;width:100%;border:1px solid #cbd8cf;border-radius:12px;padding:12px 13px;background:#fff;color:var(--ink);min-height:47px}
 input:focus,select:focus,button:focus-visible{outline:3px solid #f5c84c;outline-offset:2px}
@@ -56,7 +59,7 @@ button{font:inherit;border:0;cursor:pointer;border-radius:13px;font-weight:800;m
 <div id="nextArt"></div>
 <div><p class="eyebrow">Up next</p><h2 id="nextTitle">Add your first bin day</h2><div class="date" id="nextDate">Choose a collection date to get started.</div><div class="sub" id="nextSub"></div></div>
 </section>
-<section class="card" id="editor">
+<section class="card hidden" id="editor">
 <p class="eyebrow" id="editorEyebrow">Set up a collection</p>
 <h2 class="section-title" id="formTitle">Add a bin</h2>
 <form id="binForm">
@@ -85,12 +88,17 @@ button{font:inherit;border:0;cursor:pointer;border-radius:13px;font-weight:800;m
 <p class="status" id="notificationStatus">Notifications have not been enabled.</p>
 </form>
 </section>
-<section class="card">
-<p class="eyebrow">Your schedule</p><h2 class="section-title">Saved bin days</h2>
-<div class="bin-list" id="binList"><p class="empty">No bin days saved yet. Add one above to build your schedule.</p></div>
+<section class="card" id="savedBinsCard">
+<button type="button" class="saved-toggle" id="savedBinsToggle" aria-expanded="false" aria-controls="savedBinsPanel">
+<span><span class="eyebrow">Your schedule</span><span class="section-title">Saved bin days</span></span>
+<span class="toggle-symbol" id="savedBinsSymbol">＋</span>
+</button>
+<div class="bin-list hidden" id="savedBinsPanel"><p class="empty">No bin days saved yet. Add one above to build your schedule.</p></div>
 </section>
 </main>
-<div class="bottom-bar"><button class="add-button" id="addBin"><b>＋</b> Add another bin</button></div>
+<div class="bottom-bar" id="bottomBar">
+<button class="add-button" id="addBin" aria-expanded="false" aria-controls="editor"><b id="addIcon">＋</b><span id="addLabel">Add a bin</span></button>
+</div>
 <script>
 const DAY_NAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const TYPE_INFO={
@@ -131,12 +139,19 @@ function render(){
   $('nextDate').textContent=`on ${dayLabel(n.next)} ${formatDate(n.next)}`;
   $('nextSub').textContent=`${info.label} · ${n.frequency==1?'Weekly':'Every two weeks'}`;
  }
- const list=$('binList');
+ const list=$('savedBinsPanel');
  if(!all.length){list.innerHTML='<p class="empty">No bin days saved yet. Add one above to build your schedule.</p>';}
  else list.innerHTML=all.map(b=>`<div class="bin-row">${binSvg(b.type,true)}<div class="meta"><strong>${TYPE_INFO[b.type].label}</strong><small>${dayLabel(b.next)} ${formatDate(b.next)} · ${b.frequency==1?'Weekly':'Every two weeks'}</small></div><div class="row-actions"><button class="secondary" data-edit="${b.id}" aria-label="Edit ${TYPE_INFO[b.type].label}">Edit</button><button class="danger" data-delete="${b.id}" aria-label="Delete ${TYPE_INFO[b.type].label}">Delete</button></div></div>`).join('');
  list.querySelectorAll('[data-edit]').forEach(btn=>btn.addEventListener('click',()=>editBin(btn.dataset.edit)));
  list.querySelectorAll('[data-delete]').forEach(btn=>btn.addEventListener('click',()=>{bins=bins.filter(b=>b.id!==btn.dataset.delete);save();}));
  scheduleReminders();
+}
+function setEditorOpen(open, scroll=true){
+ $('editor').classList.toggle('hidden',!open);
+ $('addBin').setAttribute('aria-expanded',String(open));
+ $('addIcon').textContent=open?'−':'＋';
+ $('addLabel').textContent=open?'Close bin entry':'Add a bin';
+ if(open && scroll) setTimeout(()=>$('editor').scrollIntoView({behavior:'smooth',block:'start'}),50);
 }
 function resetForm(){
  $('binForm').reset();$('editId').value='';$('nextCollection').value=todayISO();$('formTitle').textContent='Add a bin';$('editorEyebrow').textContent='Set up a collection';$('saveBtn').textContent='Save bin day';$('cancelEdit').classList.add('hidden');
@@ -147,7 +162,7 @@ function editBin(id){
  document.querySelectorAll('input[name="day"]').forEach(x=>x.checked=x.value===String(b.day));
  document.querySelectorAll('input[name="type"]').forEach(x=>x.checked=x.value===b.type);
  $('formTitle').textContent='Edit bin day';$('editorEyebrow').textContent='Update collection';$('saveBtn').textContent='Save changes';$('cancelEdit').classList.remove('hidden');
- $('editor').scrollIntoView({behavior:'smooth',block:'start'});
+ setEditorOpen(true);
 }
 $('binForm').addEventListener('submit',e=>{
  e.preventDefault();
@@ -161,10 +176,21 @@ $('binForm').addEventListener('submit',e=>{
  if(date.getDay()!==Number(selectedDay.value)){alert(`The selected date is a ${dayLabel(date)}. Please choose a ${DAY_NAMES[Number(selectedDay.value)]} date or change the collection day.`);return}
  const item={id:$('editId').value||crypto.randomUUID(),day:Number(selectedDay.value),type:types[0],frequency:Number($('frequency').value),nextDate};
  const idx=bins.findIndex(b=>b.id===item.id);if(idx>=0)bins[idx]=item;else bins.push(item);
- save();resetForm();
+ save();resetForm();setEditorOpen(false,false);
 });
-$('cancelEdit').addEventListener('click',resetForm);
-$('addBin').addEventListener('click',()=>{resetForm();$('editor').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>$('days').querySelector('input').focus({preventScroll:true}),300)});
+$('cancelEdit').addEventListener('click',()=>{resetForm();setEditorOpen(false,false)});
+$('savedBinsToggle').addEventListener('click',()=>{
+ const panel=$('savedBinsPanel');
+ const open=panel.classList.contains('hidden');
+ panel.classList.toggle('hidden',!open);
+ $('savedBinsToggle').setAttribute('aria-expanded',String(open));
+ $('savedBinsSymbol').textContent=open?'−':'＋';
+});
+$('addBin').addEventListener('click',()=>{
+ const isOpen=!$('editor').classList.contains('hidden');
+ if(isOpen){resetForm();setEditorOpen(false,false);}
+ else{resetForm();setEditorOpen(true);setTimeout(()=>$('days').querySelector('input').focus({preventScroll:true}),350);}
+});
 async function enableNotifications(){
  if(!('Notification' in window)){ $('notificationStatus').textContent='Notifications are not supported in this browser.';return}
  try{
